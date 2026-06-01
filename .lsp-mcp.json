@@ -1,0 +1,20 @@
+{
+  "servers": [
+    {
+      "id": "cpp",
+      "extensions": [".c", ".h", ".cpp", ".hpp"],
+      "languageIds": ["c", "cpp"],
+      "command": "C:/Users/Tango/tools/msys64/ucrt64/bin/clangd.exe",
+      "args": [
+        "--background-index",
+        "--compile-commands-dir=E:/dev/program/cmake-build-debug",
+        "--query-driver=C:/Users/Tango/tools/msys64/ucrt64/bin/gcc.exe,C:/Users/Tango/tools/msys64/ucrt64/bin/g++.exe,C:/Users/Tango/tools/msys64/ucrt64/bin/c++.exe"
+      ],
+      "rootPatterns": ["compile_commands.json", "CMakeLists.txt", ".clangd"]
+    }
+  ],
+  "requestTimeout": 30000,
+  "autoStart": true,
+  "logLevel": "info",
+  "idleTimeout": 1800000
+}

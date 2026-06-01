@@ -1,0 +1,3 @@
+Checks: "-*, readability-identifier-naming, bugprone-*, cert-*, misc-*, clang-analyzer-*"
+HeaderFilterRegex: "src/|include/"
+AnalyzeTemporaryDtors: false

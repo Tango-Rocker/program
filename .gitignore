@@ -1,0 +1,29 @@
+# Build artifacts
+/build
+/build-*/
+/build_*/
+/cmake-build-*/
+/Testing/
+
+# CMake generated
+compile_commands.json
+
+# IDE/cache
+tools/**/.cache/
+.vscode/
+.idea/
+
+# Logs and session output
+sessions/**/artifacts/
+/artifacts/
+*.log
+
+# Scratch outputs
+gcc_*.txt
+sim_*_out.txt
+sim_*_err.txt
+sim_tests_*.txt
+tmp_*
+The string is missing the terminator*
+*.exe
+*.o

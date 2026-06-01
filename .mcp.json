@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "program-lsp": {
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "E:/dev/program/scripts/lsp-mcp-server.ps1"
+      ],
+      "env": {
+        "LSP_CONFIG_PATH": "E:/dev/program/.lsp-mcp.json",
+        "LSP_WORKSPACE_ROOT": "E:/dev/program",
+        "LSP_LOG_LEVEL": "info"
+      }
+    }
+  }
+}

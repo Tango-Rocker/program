@@ -1,0 +1,11 @@
+seed=303
+ticks=4
+field=-3 -3 7 7 0 100
+command=1 0 0 8 2 1 0
+command=3 -1 1 6 1 1 0
+---
+[event_log count=4]
+seq=1,tick=1,type=3,source=0:0,parent=18446744073709551615
+seq=2,tick=1,type=4,source=0:0,parent=1
+seq=3,tick=3,type=3,source=0:0,parent=18446744073709551615
+seq=4,tick=3,type=4,source=0:0,parent=3

@@ -1,0 +1,267 @@
+# Module Index
+
+This index is generated and stable.
+
+## Modules
+
+- `src/audio/`
+  - Sources:
+    - `src/audio/audio_request.c`
+  - Public headers:
+    - `src/audio/audio_request.h`
+  - Tests:
+    - `tests/test_audio_request.c`
+  - Owning docs:
+    - `docs/11_PROJECTILES_BUFFS_PARTICLES.md`
+
+- `src/colony/`
+  - Sources:
+    - `src/colony/construction.c`
+    - `src/colony/emergency.c`
+    - `src/colony/haul_job.c`
+    - `src/colony/inventory.c`
+    - `src/colony/job_board.c`
+    - `src/colony/worker_ai.c`
+  - Public headers:
+    - `src/colony/construction.h`
+    - `src/colony/emergency.h`
+    - `src/colony/haul_job.h`
+    - `src/colony/inventory.h`
+    - `src/colony/job_board.h`
+    - `src/colony/worker_ai.h`
+  - Tests:
+    - `tests/test_colony_emergency.c`
+    - `tests/test_construction.c`
+    - `tests/test_haul_job.c`
+    - `tests/test_inventory.c`
+    - `tests/test_job_board.c`
+    - `tests/test_worker_jobs.c`
+  - Owning docs:
+    - `docs/09_COLONY_JOBS.md`
+
+- `src/core/`
+  - Sources:
+    - `src/core/arena.c`
+    - `src/core/log.c`
+    - `src/core/random.c`
+    - `src/core/time.c`
+  - Public headers:
+    - `src/core/arena.h`
+    - `src/core/asserts.h`
+    - `src/core/log.h`
+    - `src/core/random.h`
+    - `src/core/time.h`
+  - Tests:
+    - `tests/test_arena.c`
+    - `tests/test_random.c`
+  - Owning docs:
+    - `docs/00_INDEX.md`
+    - `docs/04_CODING_STANDARD.md`
+
+- `src/ecs/`
+  - Sources:
+    - `src/ecs/entity.c`
+  - Public headers:
+    - `src/ecs/entity.h`
+  - Tests:
+    - `tests/test_entity_registry.c`
+  - Owning docs:
+    - `docs/02_ARCHITECTURE_MAP.md`
+    - `docs/06_ECS_AND_EVENTS.md`
+
+- `src/event/`
+  - Sources:
+    - `src/event/event.c`
+    - `src/event/event_log.c`
+  - Public headers:
+    - `src/event/event.h`
+    - `src/event/event_log.h`
+    - `src/event/event_queue.h`
+  - Tests:
+    - `tests/test_event_log.c`
+    - `tests/test_event_queue.c`
+  - Owning docs:
+    - `docs/06_ECS_AND_EVENTS.md`
+
+- `src/game/`
+  - Sources:
+    - `src/game/default_scene.c`
+    - `src/game/main.c`
+  - Public headers:
+    - `src/game/default_scene.h`
+  - Tests:
+    - `tests/test_default_scene.c`
+  - Owning docs:
+    - `README.md`
+
+- `src/lua/`
+  - Sources:
+    - `src/lua/content_schema.c`
+    - `src/lua/lua_host.c`
+  - Public headers:
+    - `src/lua/content_schema.h`
+    - `src/lua/lua_host.h`
+  - Tests:
+    - `tests/test_content_schema.c`
+    - `tests/test_lua_host.c`
+  - Owning docs:
+    - `docs/05_DATA_AND_LUA.md`
+    - `docs/12_TESTING.md`
+
+- `src/nav/`
+  - Sources:
+    - `src/nav/path_service.c`
+    - `src/nav/pathfind.c`
+  - Public headers:
+    - `src/nav/path_service.h`
+    - `src/nav/pathfind.h`
+  - Tests:
+    - `tests/test_path_service.c`
+    - `tests/test_pathfind.c`
+  - Owning docs:
+    - `docs/00_INDEX.md`
+    - `docs/07_NAVIGATION.md`
+
+- `src/platform/`
+  - Sources:
+    - `src/platform/app.c`
+    - `src/platform/sdl_app.c`
+  - Public headers:
+    - `src/platform/app.h`
+  - Tests:
+    - (none)
+  - Owning docs:
+    - `docs/08_UI_UX.md`
+    - `docs/15_AGENT_WORKFLOW.md`
+
+- `src/render/`
+  - Sources:
+    - `src/render/camera.c`
+    - `src/render/hex_debug_render.c`
+    - `src/render/particle_request.c`
+  - Public headers:
+    - `src/render/camera.h`
+    - `src/render/hex_debug_render.h`
+    - `src/render/particle_request.h`
+  - Tests:
+    - `tests/test_camera.c`
+    - `tests/test_particle_request.c`
+  - Owning docs:
+    - `docs/08_UI_UX.md`
+    - `docs/12_TESTING.md`
+
+- `src/script/`
+  - Sources:
+    - (none)
+  - Public headers:
+    - (none)
+  - Tests:
+    - (none)
+  - Owning docs:
+    - (none)
+
+- `src/sim/`
+  - Sources:
+    - `src/sim/combat.c`
+    - `src/sim/command.c`
+    - `src/sim/horde_attention.c`
+    - `src/sim/horde_group.c`
+    - `src/sim/horde_materialization.c`
+    - `src/sim/noise_system.c`
+    - `src/sim/party.c`
+    - `src/sim/projectile.c`
+    - `src/sim/replay.c`
+    - `src/sim/scheduler.c`
+    - `src/sim/sensory_fields.c`
+    - `src/sim/sim_context.c`
+    - `src/sim/snapshot.c`
+    - `src/sim/status_effect.c`
+  - Public headers:
+    - `src/sim/combat.h`
+    - `src/sim/command.h`
+    - `src/sim/horde_attention.h`
+    - `src/sim/horde_group.h`
+    - `src/sim/horde_materialization.h`
+    - `src/sim/noise_system.h`
+    - `src/sim/party.h`
+    - `src/sim/projectile.h`
+    - `src/sim/replay.h`
+    - `src/sim/scheduler.h`
+    - `src/sim/sensory_fields.h`
+    - `src/sim/sim_context.h`
+    - `src/sim/snapshot.h`
+    - `src/sim/status_effect.h`
+  - Tests:
+    - `tests/test_combat_ability.c`
+    - `tests/test_command_queue.c`
+    - `tests/test_horde_attention.c`
+    - `tests/test_horde_group.c`
+    - `tests/test_horde_materialization.c`
+    - `tests/test_noise_field.c`
+    - `tests/test_particle_request.c`
+    - `tests/test_party.c`
+    - `tests/test_projectile.c`
+    - `tests/test_replay.c`
+    - `tests/test_replay_golden.c`
+    - `tests/test_scheduler.c`
+    - `tests/test_sensory_fields.c`
+    - `tests/test_sim_tick.c`
+    - `tests/test_snapshot.c`
+    - `tests/test_status_effect.c`
+  - Owning docs:
+    - `docs/06_ECS_AND_EVENTS.md`
+    - `docs/12_TESTING.md`
+    - `docs/14_SIMULATION_DOCTRINE.md`
+
+- `src/ui/`
+  - Sources:
+    - `src/ui/causal_report.c`
+    - `src/ui/command_inspector.c`
+    - `src/ui/debug_overlay.c`
+    - `src/ui/field_overlay.c`
+    - `src/ui/sdl_hud.c`
+    - `src/ui/ui_state.c`
+  - Public headers:
+    - `src/ui/causal_report.h`
+    - `src/ui/command_inspector.h`
+    - `src/ui/debug_overlay.h`
+    - `src/ui/field_overlay.h`
+    - `src/ui/sdl_hud.h`
+    - `src/ui/ui_state.h`
+  - Tests:
+    - `tests/test_causal_report.c`
+    - `tests/test_command_inspector.c`
+    - `tests/test_field_overlay.c`
+  - Owning docs:
+    - `docs/08_UI_UX.md`
+    - `docs/12_TESTING.md`
+
+- `src/world/`
+  - Sources:
+    - `src/world/field_registry.c`
+    - `src/world/hex.c`
+    - `src/world/scenario_gen.c`
+    - `src/world/structure.c`
+    - `src/world/tile_field.c`
+    - `src/world/topology.c`
+    - `src/world/world_map.c`
+  - Public headers:
+    - `src/world/field_registry.h`
+    - `src/world/hex.h`
+    - `src/world/scenario_gen.h`
+    - `src/world/structure.h`
+    - `src/world/tile_field.h`
+    - `src/world/topology.h`
+    - `src/world/world_map.h`
+  - Tests:
+    - `tests/test_hex.c`
+    - `tests/test_scenario_gen.c`
+    - `tests/test_structure.c`
+    - `tests/test_tile_field.c`
+    - `tests/test_topology.c`
+    - `tests/test_world_map.c`
+  - Owning docs:
+    - `docs/03_MODULE_MAP.md`
+    - `docs/07_NAVIGATION.md`
+    - `docs/12_TESTING.md`
+
