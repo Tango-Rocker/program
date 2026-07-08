@@ -116,6 +116,7 @@ static bool bootstrap_load_default_scene(BootstrapState *state)
         return false;
     }
 
+    state->opening_ran = false;
     game_default_scene_shutdown(&state->scene);
     state->scene = (GameDefaultScene){0};
     if (game_default_scene_init(&state->scene) != GAME_DEFAULT_SCENE_RESULT_OK) {
@@ -132,6 +133,7 @@ static bool bootstrap_load_default_scene(BootstrapState *state)
         return false;
     }
     bootstrap_configure_game_ui(state);
+    state->opening_ran = true;
     return true;
 }
 
@@ -141,8 +143,21 @@ static void bootstrap_start_new_game(BootstrapState *state)
         return;
     }
     game_ui_state_init(&state->ui);
+    bootstrap_configure_game_ui(state);
+    state->ui.screen = GAME_UI_SCREEN_GAME;
+    state->has_preview_target = false;
+    bootstrap_set_camera_center(state, state->scene.party_position);
+}
+
+static void bootstrap_regenerate_world(BootstrapState *state)
+{
+    if (!state) {
+        return;
+    }
+    game_ui_state_init(&state->ui);
     if (bootstrap_load_default_scene(state)) {
-        state->ui.screen = GAME_UI_SCREEN_GAME;
+        state->ui.screen = GAME_UI_SCREEN_MENU;
+        state->has_preview_target = false;
         bootstrap_set_camera_center(state, state->scene.party_position);
     }
 }
@@ -458,6 +473,10 @@ static void bootstrap_handle_sdl_event(void *user_data, void *event_ptr, int vie
         if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN && event->button.button == SDL_BUTTON_LEFT) {
             if (hit.kind == GAME_UI_HIT_MENU_NEW_GAME) {
                 bootstrap_start_new_game(state);
+                return;
+            }
+            if (hit.kind == GAME_UI_HIT_MENU_REGENERATE) {
+                bootstrap_regenerate_world(state);
                 return;
             }
             game_ui_handle_menu_click(&state->ui, &hit);

@@ -44,7 +44,9 @@ static int test_ui_layout_stability(void)
     failed += assert_true(compact.attack_button.y > compact.move_button.y, "compact actions wrap to second row");
     failed += assert_true(compact.field_toggle.x + compact.field_toggle.w <= compact.viewport_width,
                           "compact field toggle stays visible");
-    failed += assert_true(desktop.menu_new_game_button.h >= 58.0f, "menu buttons are large");
+    failed += assert_true(desktop.menu_new_game_button.h >= 48.0f, "menu buttons are large");
+    failed += assert_true(desktop.menu_new_game_button.y < desktop.menu_regenerate_button.y,
+                          "regenerate follows enter world");
     failed += assert_true(game_ui_rect_contains(desktop.emit_noise_button, desktop.emit_noise_button.x + 1.0f,
                                                 desktop.emit_noise_button.y + 1.0f),
                           "emit button hit rect stable");
@@ -72,6 +74,14 @@ static int test_ui_layout_stability(void)
     int32_t visible_area = (max_q - min_q + 1) * (max_r - min_r + 1);
     int32_t map_area = (scene.scenario.horde_anchor.q + 1) * (scene.scenario.horde_anchor.r + 1);
     failed += assert_true(visible_area > 0 && visible_area < map_area, "visible bounds avoid full-map scan");
+    int32_t q_step = 0;
+    int32_t r_step = 0;
+    game_ui_minimap_sample_stride(&desktop, &scene, &q_step, &r_step);
+    int32_t sampled_area = ((scene.scenario.horde_anchor.q + q_step) / q_step) *
+                           ((scene.scenario.horde_anchor.r + r_step) / r_step);
+    int32_t minimap_pixels = (int32_t)(desktop.minimap.w * desktop.minimap.h);
+    failed += assert_true(q_step > 1 && r_step > 1, "large minimap uses sampled stride");
+    failed += assert_true(sampled_area <= minimap_pixels + 512, "minimap sampling is pixel bounded");
     game_default_scene_shutdown(&scene);
     return failed;
 }
@@ -204,6 +214,13 @@ static int test_ui_hit_testing_and_selection(void)
     game_ui_handle_menu_click(&ui, &hit);
     failed += assert_true(ui.screen == GAME_UI_SCREEN_GAME, "new game opens game screen");
     ui.screen = GAME_UI_SCREEN_MENU;
+    failed += assert_true(game_ui_menu_hit_test(&layout, ui.screen, layout.menu_regenerate_button.x + 4.0f,
+                                                layout.menu_regenerate_button.y + 4.0f, &hit),
+                          "regenerate menu hit");
+    failed += assert_true(hit.kind == GAME_UI_HIT_MENU_REGENERATE, "regenerate classified");
+    game_ui_handle_menu_click(&ui, &hit);
+    failed += assert_true(ui.screen == GAME_UI_SCREEN_MENU, "regenerate hit stays on menu for app handler");
+    failed += assert_true(game_ui_hit_label(hit.kind)[0] != '\0', "regenerate hit label available");
     failed += assert_true(game_ui_menu_hit_test(&layout, ui.screen, layout.menu_tutorial_button.x + 4.0f,
                                                 layout.menu_tutorial_button.y + 4.0f, &hit),
                           "tutorial menu hit");

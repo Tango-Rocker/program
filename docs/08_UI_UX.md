@@ -27,9 +27,10 @@ The UI does not fully explain the world in advance. It provides instruments, war
 - `src/ui/ui_state.[ch]` owns non-authoritative selection, hover, panel visibility, command result, and layout/hit-test state.
 - `src/ui/sdl_hud.[ch]` renders the SDL3/SDL3_ttf player HUD for `sim_app` only: hex map, top status bar, party/action panel, event strip, right inspector, and collapsible forensic panels.
 - The HUD hex geometry is scaled to fit the larger default showcase map at desktop and compact viewports while preserving marker-priority hit testing.
-- The HUD uses a camera-centered world projection for the 100x area demo map, keeping nearby tiles clickable while the underlying map remains much larger than the viewport.
+- The HUD uses a camera-centered world projection for the 40x larger 1140x760 demo map, keeping nearby tiles clickable while the underlying map remains much larger than the viewport.
 - RTS-style input polish includes right-click movement, staged action targeting from the bottom action bar, clamped keyboard/edge camera panning, hover targeting feedback, and bounded hit testing over the visible world area.
 - The HUD includes a full-map minimap with party/colony/horde markers, a viewport rectangle, click-to-jump camera navigation, and focus buttons for the primary anchors.
+- Minimap terrain rendering samples by minimap pixel dimensions so draw work remains bounded as map tile count grows.
 - Move targeting previews the route and active move orders step the party along that route through deterministic scene updates.
 - `Interact` now reports context-specific outcomes for party, colony, worker, horde/contact, noise traces, and open terrain.
 - The action bar includes a staged tactical `Attack` command that resolves against horde/contact targets through the command/combat path.
@@ -37,7 +38,7 @@ The UI does not fully explain the world in advance. It provides instruments, war
 - Top-bar pause/speed controls and keyboard shortcuts gate scene updates, while the minimap can toggle a noise overlay filter.
 - Hovered controls and world targets expose compact tooltip labels near the playfield.
 - UI chrome blocks hover, hit-test fallthrough, keyboard-menu, edge, and drag camera panning; only the active world playfield can trigger camera pan gestures.
-- The SDL app opens fullscreen on a main menu with `New Game`, `Load`, `Settings`, and `Tutorial` screens. `Load` is currently a placeholder because persistent save slots are not implemented.
+- The SDL app opens fullscreen on a main menu with `Enter World`, `Regenerate`, `Load`, `Settings`, and `Tutorial` entries. `Enter World` reuses the stored in-memory scene, while `Regenerate` explicitly rebuilds the default scene. `Load` is currently a placeholder because persistent save slots are not implemented.
 - The gameplay HUD prioritizes readable player-facing state over debug telemetry: party position, horde posture/pressure, current target, terrain/noise, current order, latest alert, route summary, and large action buttons.
 - Debug-style seed/tick/event counts and demo-chain summaries are not part of the main gameplay HUD.
 - Tutorial guidance is tracked in `docs/16_TUTORIAL.md` and mirrored in the SDL tutorial menu; both must be updated as player-facing controls, panels, and consequence explanations change.

@@ -82,6 +82,18 @@ static int topology_cmp_portal(const void *lhs, const void *rhs) {
     return topology_cmp_hex(left->portal, right->portal);
 }
 
+static int topology_cmp_tile_item(const void *lhs, const void *rhs) {
+    const TopologyTile *left = (const TopologyTile *)lhs;
+    const TopologyTile *right = (const TopologyTile *)rhs;
+    return topology_cmp_hex(left->tile, right->tile);
+}
+
+static int topology_cmp_tile_region(const void *lhs, const void *rhs) {
+    const GameWorldTopologyTileRegion *left = (const GameWorldTopologyTileRegion *)lhs;
+    const GameWorldTopologyTileRegion *right = (const GameWorldTopologyTileRegion *)rhs;
+    return topology_cmp_hex(left->tile, right->tile);
+}
+
 static void topology_free_tile_array(TopologyTileArray *array) {
     free(array->items);
     array->items = NULL;
@@ -140,9 +152,18 @@ static GameWorldTopologyResult topology_push_portal_edge(TopologyPortalArray *ar
 }
 
 static int topology_find_passable_index(const TopologyTile *tiles, size_t count, GameHexAxial tile) {
-    for (size_t i = 0u; i < count; ++i) {
-        if (topology_hex_equal(tiles[i].tile, tile)) {
-            return (int)i;
+    size_t lo = 0u;
+    size_t hi = count;
+    while (lo < hi) {
+        size_t mid = lo + (hi - lo) / 2u;
+        int cmp = topology_cmp_hex(tiles[mid].tile, tile);
+        if (cmp == 0) {
+            return (int)mid;
+        }
+        if (cmp < 0) {
+            lo = mid + 1u;
+        } else {
+            hi = mid;
         }
     }
     return -1;
@@ -218,10 +239,19 @@ GameWorldTopologyResult game_world_topology_region_of_tile(const GameWorldTopolo
         return GAME_WORLD_TOPOLOGY_RESULT_INVALID_ARGUMENT;
     }
 
-    for (size_t i = 0u; i < topology->tile_region_count; ++i) {
-        if (topology_hex_equal(topology->tile_regions[i].tile, tile)) {
-            *out_region_id = topology->tile_regions[i].region_id;
+    size_t lo = 0u;
+    size_t hi = topology->tile_region_count;
+    while (lo < hi) {
+        size_t mid = lo + (hi - lo) / 2u;
+        int cmp = topology_cmp_hex(topology->tile_regions[mid].tile, tile);
+        if (cmp == 0) {
+            *out_region_id = topology->tile_regions[mid].region_id;
             return GAME_WORLD_TOPOLOGY_RESULT_OK;
+        }
+        if (cmp < 0) {
+            lo = mid + 1u;
+        } else {
+            hi = mid;
         }
     }
 
@@ -301,6 +331,11 @@ GameWorldTopologyResult game_world_topology_rebuild(
         topology_free_tile_array(&context.passable);
         topology_free_tile_array(&context.portals);
         return GAME_WORLD_TOPOLOGY_RESULT_OK;
+    }
+
+    qsort(context.passable.items, context.passable.count, sizeof(TopologyTile), topology_cmp_tile_item);
+    if (context.portals.count > 1u) {
+        qsort(context.portals.items, context.portals.count, sizeof(TopologyTile), topology_cmp_tile_item);
     }
 
     GameWorldTopologyRegionId *tile_region_ids = (GameWorldTopologyRegionId *)calloc(
@@ -438,6 +473,7 @@ GameWorldTopologyResult game_world_topology_rebuild(
     }
 
     topology_deduplicate_portals(&context.portal_edges);
+    qsort(tile_regions, context.passable.count, sizeof(GameWorldTopologyTileRegion), topology_cmp_tile_region);
 
     topology->tile_regions = tile_regions;
     topology->tile_region_count = context.passable.count;

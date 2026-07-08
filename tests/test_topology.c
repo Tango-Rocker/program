@@ -117,6 +117,28 @@ int test_topology(void) {
     game_world_topology_destroy(&topology);
     game_world_map_destroy(&map);
 
+    GameWorldMap large_map = {0};
+    failed += assert_true(game_world_map_init(&large_map, 8, -1) == GAME_WORLD_MAP_RESULT_OK,
+                          "init large topology map");
+    for (int32_t q = 0; q < 64; ++q) {
+        failed += assert_true(ensure_tile(&large_map, 8, (GameHexAxial){q, 0}, 1) == 0,
+                              "large topology horizontal corridor");
+    }
+    for (int32_t r = 1; r < 32; ++r) {
+        failed += assert_true(ensure_tile(&large_map, 8, (GameHexAxial){63, r}, 1) == 0,
+                              "large topology vertical corridor");
+    }
+    game_world_topology_init(&topology);
+    failed += assert_true(
+        game_world_topology_rebuild(&topology, &large_map, topology_passable, NULL) == GAME_WORLD_TOPOLOGY_RESULT_OK,
+        "large topology rebuild"
+    );
+    failed += assert_true(game_world_topology_region_count(&topology) == 1u, "large corridor is one region");
+    failed += assert_true(game_world_topology_same_region(&topology, (GameHexAxial){0, 0}, (GameHexAxial){63, 31}),
+                          "large topology indexed lookup connects endpoints");
+    game_world_topology_destroy(&topology);
+    game_world_map_destroy(&large_map);
+
     if (failed == 0) {
         printf("[topology] PASS\n");
     }

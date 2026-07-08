@@ -332,8 +332,9 @@ static void draw_minimap(SDL_Renderer *renderer, GameSdlHud *hud, const GameUiLa
     draw_rect(renderer, layout->minimap, color_rgba(10, 13, 18, 255));
     draw_rect_outline(renderer, layout->minimap, color_rgba(74, 82, 92, 255));
 
-    int32_t q_step = scene->scenario.horde_anchor.q > 100 ? 2 : 1;
-    int32_t r_step = scene->scenario.horde_anchor.r > 80 ? 2 : 1;
+    int32_t q_step = 1;
+    int32_t r_step = 1;
+    game_ui_minimap_sample_stride(layout, scene, &q_step, &r_step);
     for (int32_t q = 0; q <= scene->scenario.horde_anchor.q; q += q_step) {
         for (int32_t r = 0; r <= scene->scenario.horde_anchor.r; r += r_step) {
             GameHexAxial tile = {q, r};
@@ -574,8 +575,10 @@ static void draw_main_menu(SDL_Renderer *renderer, GameSdlHud *hud, const GameUi
               layout->main_menu_panel.y + 58.0f, color_rgba(142, 172, 182, 255));
 
     if (ui->screen == GAME_UI_SCREEN_MENU) {
-        draw_menu_button(renderer, hud, layout->menu_new_game_button, "New Game",
+        draw_menu_button(renderer, hud, layout->menu_new_game_button, "Enter World",
                          ui->hover.kind == GAME_UI_HIT_MENU_NEW_GAME);
+        draw_menu_button(renderer, hud, layout->menu_regenerate_button, "Regenerate",
+                         ui->hover.kind == GAME_UI_HIT_MENU_REGENERATE);
         draw_menu_button(renderer, hud, layout->menu_load_button, "Load", ui->hover.kind == GAME_UI_HIT_MENU_LOAD);
         draw_menu_button(renderer, hud, layout->menu_settings_button, "Settings",
                          ui->hover.kind == GAME_UI_HIT_MENU_SETTINGS);

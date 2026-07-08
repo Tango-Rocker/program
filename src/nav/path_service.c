@@ -104,7 +104,7 @@ GamePathServiceResult game_path_service_submit(
     GameHexAxial start,
     GameHexAxial goal,
     const GamePathCostMap *cost_map,
-    const GamePathQueryScratch *scratch,
+    GamePathQueryScratch *scratch,
     uint32_t request_budget,
     GameHexAxial *result_path_buffer,
     size_t result_path_capacity,
@@ -259,27 +259,33 @@ GamePathServiceResult game_path_service_advance_tick(GamePathService *service, u
                 continue;
             }
 
-            if (remaining_budget < slot->request_budget) {
+            if (remaining_budget == 0u) {
                 continue;
             }
 
             slot->has_result = false;
             slot->result_path_length = 0u;
             size_t expanded_count = 0u;
+            uint32_t node_budget =
+                remaining_budget < slot->request_budget ? remaining_budget : slot->request_budget;
 
             GamePathFindResult query_result = game_pathfind_query(
                 slot->start,
                 slot->goal,
                 slot->cost_map,
                 slot->scratch,
-                UINT32_MAX,
+                node_budget,
                 slot->result_path,
                 slot->result_path_capacity,
                 &slot->result_path_length,
                 &expanded_count
             );
             slot->last_query_result = query_result;
-            remaining_budget -= slot->request_budget;
+            uint32_t consumed = expanded_count > (size_t)UINT32_MAX ? UINT32_MAX : (uint32_t)expanded_count;
+            if (consumed == 0u && query_result != GAME_PATH_FIND_RESULT_INVALID_ARGUMENT) {
+                consumed = 1u;
+            }
+            remaining_budget = consumed >= remaining_budget ? 0u : remaining_budget - consumed;
 
             GamePathServiceState next_state = game_path_service_next_state_for_result(query_result);
             if (next_state == GAME_PATH_SERVICE_STATE_RESOLVED) {

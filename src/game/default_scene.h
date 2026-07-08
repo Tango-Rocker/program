@@ -17,6 +17,7 @@
 #include "world/field_registry.h"
 #include "world/scenario_gen.h"
 #include "world/tile_field.h"
+#include "world/topology.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,15 +84,21 @@ typedef struct {
     uint64_t seed;
     uint64_t tick;
     GameScenario scenario;
+    GameWorldTopology topology;
     GameHexAxial party_position;
     GamePathCostMap path_cost_map;
     GamePathQueryScratch path_scratch;
     uint16_t *path_cost_values;
+    uint16_t *path_query_cost_values;
     uint32_t *path_g_score;
     uint32_t *path_f_score;
     int32_t *path_parent;
     bool *path_open;
     bool *path_closed;
+    bool *path_touched_flags;
+    size_t *path_heap;
+    size_t *path_heap_pos;
+    size_t *path_touched;
     GamePathService path_service;
     GamePathServiceRequestSlot path_slots[4];
     GameHexAxial *path_result_buffer;

@@ -17,10 +17,10 @@ int test_default_scene(void)
     int failed = 0;
     GameDefaultScene scene = {0};
     failed += assert_true(game_default_scene_init(&scene) == GAME_DEFAULT_SCENE_RESULT_OK, "scene init");
-    failed += assert_true(scene.scenario.horde_anchor.q >= 179, "default scene uses 100x wider showcase map area");
-    failed += assert_true(scene.scenario.horde_anchor.r >= 119, "default scene uses 100x taller showcase map area");
-    failed += assert_true(scene.scenario.passable_tiles + scene.scenario.blocked_tiles >= 21600u,
-                          "showcase map has 100x tile count");
+    failed += assert_true(scene.scenario.horde_anchor.q >= 1139, "default scene uses 40x wider current map area");
+    failed += assert_true(scene.scenario.horde_anchor.r >= 759, "default scene uses 40x taller current map area");
+    failed += assert_true(scene.scenario.passable_tiles + scene.scenario.blocked_tiles >= 866400u,
+                          "showcase map has 40x current tile count");
     failed += assert_true(scene.party_position.q == scene.scenario.party_anchor.q, "party starts at scenario anchor");
     failed += assert_true(game_default_scene_run_opening(&scene) == GAME_DEFAULT_SCENE_RESULT_OK, "opening run");
     failed += assert_true(game_event_log_count(game_default_scene_event_log(&scene)) == 3u, "three causal events");

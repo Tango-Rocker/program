@@ -59,6 +59,10 @@ static int test_haul_job_successful_transfer(void) {
     int32_t path_parent[3u] = {-1, -1, -1};
     bool path_open[3u] = {0};
     bool path_closed[3u] = {0};
+    bool path_touched_flags[3u] = {0};
+    size_t path_heap[3u] = {0};
+    size_t path_heap_pos[3u] = {0};
+    size_t path_touched[3u] = {0};
     GamePathQueryScratch scratch = {
         .capacity = 3u,
         .g_score = path_g,
@@ -66,6 +70,13 @@ static int test_haul_job_successful_transfer(void) {
         .parent = path_parent,
         .open = path_open,
         .closed = path_closed,
+        .touched_flags = path_touched_flags,
+        .heap = path_heap,
+        .heap_pos = path_heap_pos,
+        .touched = path_touched,
+        .heap_capacity = 3u,
+        .heap_pos_capacity = 3u,
+        .touched_capacity = 3u,
     };
 
     GamePathServiceRequestSlot path_slots[1u] = {0};
@@ -85,7 +96,7 @@ static int test_haul_job_successful_transfer(void) {
             (GameHexAxial){0, 2},
             &cost_map,
             &scratch,
-            2u,
+            10u,
             path_buffer,
             8u,
             &route
@@ -144,7 +155,7 @@ static int test_haul_job_successful_transfer(void) {
             &path_service,
             job,
             GAME_HAUL_JOB_STATE_RESERVE_SOURCE,
-            2u,
+            10u,
             NULL,
             &audit_log
         ) == GAME_HAUL_JOB_RESULT_OK,
@@ -278,6 +289,10 @@ static int test_haul_job_resource_conflict(void) {
     int32_t path_parent[3u] = {-1, -1, -1};
     bool path_open[3u] = {0};
     bool path_closed[3u] = {0};
+    bool path_touched_flags[3u] = {0};
+    size_t path_heap[3u] = {0};
+    size_t path_heap_pos[3u] = {0};
+    size_t path_touched[3u] = {0};
     GamePathQueryScratch scratch = {
         .capacity = 3u,
         .g_score = path_g,
@@ -285,6 +300,13 @@ static int test_haul_job_resource_conflict(void) {
         .parent = path_parent,
         .open = path_open,
         .closed = path_closed,
+        .touched_flags = path_touched_flags,
+        .heap = path_heap,
+        .heap_pos = path_heap_pos,
+        .touched = path_touched,
+        .heap_capacity = 3u,
+        .heap_pos_capacity = 3u,
+        .touched_capacity = 3u,
     };
     GamePathServiceRequestSlot path_slots[1u] = {0};
     GamePathService path_service = {0};
@@ -303,7 +325,7 @@ static int test_haul_job_resource_conflict(void) {
             (GameHexAxial){0, 2},
             &cost_map,
             &scratch,
-            2u,
+            10u,
             path_buffer,
             8u,
             &route
@@ -412,6 +434,10 @@ static int test_haul_job_path_failure_and_abort(void) {
     int32_t blocked_parent[4u] = {-1, -1, -1, -1};
     bool blocked_open[4u] = {0};
     bool blocked_closed[4u] = {0};
+    bool blocked_touched_flags[4u] = {0};
+    size_t blocked_heap[4u] = {0};
+    size_t blocked_heap_pos[4u] = {0};
+    size_t blocked_touched[4u] = {0};
     GamePathQueryScratch blocked_scratch = {
         .capacity = 4u,
         .g_score = blocked_g,
@@ -419,6 +445,13 @@ static int test_haul_job_path_failure_and_abort(void) {
         .parent = blocked_parent,
         .open = blocked_open,
         .closed = blocked_closed,
+        .touched_flags = blocked_touched_flags,
+        .heap = blocked_heap,
+        .heap_pos = blocked_heap_pos,
+        .touched = blocked_touched,
+        .heap_capacity = 4u,
+        .heap_pos_capacity = 4u,
+        .touched_capacity = 4u,
     };
     GamePathServiceRequestSlot path_slots[1u] = {0};
     GamePathService path_service = {0};

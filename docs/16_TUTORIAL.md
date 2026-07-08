@@ -22,6 +22,7 @@ The tutorial is a first-class player-facing system, not throwaway help text.
 ## Current Implementation
 
 - The SDL main menu includes a `Tutorial` screen with first-pass controls and consequence guidance.
+- `Enter World` reuses the currently stored in-memory world; `Regenerate` is the explicit main-menu action for rebuilding the default world.
 - The tutorial screen is intentionally concise until dedicated tutorial state exists; it must still stay synchronized with implemented controls.
 - The SDL main menu includes `Load` and `Settings` entries. `Load` currently reports that no save slots are available because persistent SDL save-slot UI is not implemented.
 - The gameplay HUD now presents tutorial-relevant gameplay facts directly: party location, horde pressure, selected target, terrain, noise, route/order state, latest alert, and large action buttons.

@@ -38,6 +38,7 @@ typedef enum {
     GAME_UI_HIT_MENU_SETTINGS = 22,
     GAME_UI_HIT_MENU_TUTORIAL = 23,
     GAME_UI_HIT_MENU_BACK = 24,
+    GAME_UI_HIT_MENU_REGENERATE = 25,
 } GameUiHitKind;
 
 typedef enum {
@@ -101,6 +102,7 @@ typedef struct {
     GameUiRect causal_panel;
     GameUiRect main_menu_panel;
     GameUiRect menu_new_game_button;
+    GameUiRect menu_regenerate_button;
     GameUiRect menu_load_button;
     GameUiRect menu_settings_button;
     GameUiRect menu_tutorial_button;
@@ -140,6 +142,8 @@ bool game_ui_hit_kind_is_world(GameUiHitKind kind);
 bool game_ui_menu_hit_test(const GameUiLayout *layout, GameUiScreenKind screen, float x, float y, GameUiHit *out_hit);
 bool game_ui_minimap_tile_at(const GameUiLayout *layout, const GameDefaultScene *scene, float x, float y,
                              GameHexAxial *out_tile);
+void game_ui_minimap_sample_stride(const GameUiLayout *layout, const GameDefaultScene *scene, int32_t *out_q_step,
+                                   int32_t *out_r_step);
 void game_ui_tile_center(const GameUiLayout *layout, GameHexAxial tile, float *out_x, float *out_y);
 bool game_ui_hit_test(const GameUiLayout *layout, const GameDefaultScene *scene, float x, float y, GameUiHit *out_hit);
 void game_ui_handle_click(GameUiState *ui, const GameUiHit *hit);

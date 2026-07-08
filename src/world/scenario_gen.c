@@ -27,8 +27,8 @@ void game_scenario_destroy(GameScenario *scenario) {
 }
 
 GameScenarioGenResult game_scenario_generate(GameScenario *scenario, const GameScenarioConfig *config) {
-    if (!scenario || !config || config->width <= 0 || config->height <= 0 || config->width > 256 || config->height > 256
-        || config->block_chance_percent > 95u) {
+    if (!scenario || !config || config->width <= 0 || config->height <= 0 || config->width > 2048 ||
+        config->height > 2048 || config->block_chance_percent > 95u) {
         return GAME_SCENARIO_GEN_RESULT_INVALID_ARGUMENT;
     }
 

@@ -84,3 +84,5 @@
 - UX-002-ui-pan-guard-and-tutorial-directive
 - UX-003-main-menu-and-ui-hit-blocking
 - UX-004-fullscreen-readable-gameplay-hud
+- PERF-002-40x-map-scale-path-render
+- UI-009-stored-world-manual-regeneration

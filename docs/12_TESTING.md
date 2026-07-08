@@ -29,7 +29,8 @@
 - noise field impulse radius/attenuation
 - horde attention rise/decay/hysteresis
 - deterministic path queries and stable tie-breaking
-- path service lifecycle tests (submit/status/cancel/retrieve, expiry, budgeting, stale handles)
+- deterministic heap-backed path queries, touched scratch reset, and stable tie-breaking
+- path service lifecycle tests (submit/status/cancel/retrieve, expiry, expanded-node budgeting, stale handles)
 - job board storage/reservation lifecycle tests (create, reserve conflict, expiry, valid/invalid transitions)
 - worker job selection tests (role match, urgency/distance tie-break, stale reservation avoidance, threat preemption, audit reasons)
 - construction worksite lifecycle tests (planning, resource delivery, build ticks, completion placement, abort handling, audit trail)
@@ -44,13 +45,13 @@
 - field overlay tests (bounded extraction, missing field, clipping/order, non-mutation)
 - causal report tests (linear chain, branch selection, missing parent)
 - scenario generator tests (seed stability, seed/config difference, invalid config, topology sanity)
-- default scene test (100x area showcase map, startup slice includes party noise, horde reaction, worker audit, causal report, HUD-submitted noise command effects, party movement, and world interaction)
+- default scene test (1140x760 40x current showcase map, startup slice includes party noise, horde reaction, worker audit, causal report, HUD-submitted noise command effects, party movement, and world interaction)
 - default scene pathing/interactions test (path preview, path-follow movement completion, movement events, contextual colony and worker interactions)
 - default scene tactical command feedback test (attack rejection before hostile materialization, attack command resolution after materialization, command history, alerts, attack summary, and event-queue preservation)
 - default scene demo showcase test (sensory fields, horde materialization, colony emergency/construction, combat/projectile/status, audio/particle projection, replay trace)
-- UI state/layout tests (camera-centered large-map projection, visible tile bounds, tile and marker hit-testing, marker priority, movement/interact/noise action staging, button hit-testing, panel collapse state, inspector-safe compact controls, and stable desktop/compact layouts)
+- UI state/layout tests (camera-centered large-map projection, visible tile bounds, pixel-bounded minimap sampling, tile and marker hit-testing, marker priority, movement/interact/noise action staging, button hit-testing, panel collapse state, inspector-safe compact controls, and stable desktop/compact layouts)
 - UI minimap tests (minimap coordinate mapping, minimap click hit testing, and focus-button camera/selection behavior)
-- UI controls tests (pause toggle, speed cycle, minimap filter toggle, and attack action staging)
+- UI controls tests (pause toggle, speed cycle, minimap filter toggle, attack action staging, and regenerate menu hit testing)
 - UI tooltip label smoke coverage for hit targets.
 - module index generator smoke checks (generated file refresh and stability)
 - sprint status generator stability checks

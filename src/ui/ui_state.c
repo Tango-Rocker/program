@@ -116,9 +116,9 @@ void game_ui_layout_build(int viewport_width, int viewport_height, GameUiLayout 
     const float menu_x = ((float)viewport_width - menu_w) * 0.5f;
     const float menu_y = ((float)viewport_height - menu_h) * 0.5f;
     const float menu_button_w = menu_w - 96.0f;
-    const float menu_button_h = 58.0f;
+    const float menu_button_h = 48.0f;
     const float menu_button_x = menu_x + 48.0f;
-    const float menu_button_y = menu_y + 112.0f;
+    const float menu_button_y = menu_y + 92.0f;
 
     *out_layout = (GameUiLayout){
         .viewport_width = viewport_width,
@@ -153,9 +153,10 @@ void game_ui_layout_build(int viewport_width, int viewport_height, GameUiLayout 
         .causal_panel = game_ui_rect(right_x + 22.0f, top_h + 304.0f, right_w - 44.0f, 134.0f),
         .main_menu_panel = game_ui_rect(menu_x, menu_y, menu_w, menu_h),
         .menu_new_game_button = game_ui_rect(menu_button_x, menu_button_y, menu_button_w, menu_button_h),
-        .menu_load_button = game_ui_rect(menu_button_x, menu_button_y + 70.0f, menu_button_w, menu_button_h),
-        .menu_settings_button = game_ui_rect(menu_button_x, menu_button_y + 140.0f, menu_button_w, menu_button_h),
-        .menu_tutorial_button = game_ui_rect(menu_button_x, menu_button_y + 210.0f, menu_button_w, menu_button_h),
+        .menu_regenerate_button = game_ui_rect(menu_button_x, menu_button_y + 56.0f, menu_button_w, menu_button_h),
+        .menu_load_button = game_ui_rect(menu_button_x, menu_button_y + 112.0f, menu_button_w, menu_button_h),
+        .menu_settings_button = game_ui_rect(menu_button_x, menu_button_y + 168.0f, menu_button_w, menu_button_h),
+        .menu_tutorial_button = game_ui_rect(menu_button_x, menu_button_y + 224.0f, menu_button_w, menu_button_h),
         .menu_back_button = game_ui_rect(menu_button_x, menu_y + menu_h - 82.0f, menu_button_w, 52.0f),
     };
 }
@@ -262,6 +263,10 @@ bool game_ui_menu_hit_test(const GameUiLayout *layout, GameUiScreenKind screen, 
             *out_hit = (GameUiHit){.kind = GAME_UI_HIT_MENU_NEW_GAME, .tile = {0, 0}};
             return true;
         }
+        if (game_ui_rect_contains(layout->menu_regenerate_button, x, y)) {
+            *out_hit = (GameUiHit){.kind = GAME_UI_HIT_MENU_REGENERATE, .tile = {0, 0}};
+            return true;
+        }
         if (game_ui_rect_contains(layout->menu_load_button, x, y)) {
             *out_hit = (GameUiHit){.kind = GAME_UI_HIT_MENU_LOAD, .tile = {0, 0}};
             return true;
@@ -325,6 +330,37 @@ bool game_ui_minimap_tile_at(const GameUiLayout *layout, const GameDefaultScene 
         out_tile->r = max_r;
     }
     return true;
+}
+
+void game_ui_minimap_sample_stride(const GameUiLayout *layout, const GameDefaultScene *scene, int32_t *out_q_step,
+                                   int32_t *out_r_step)
+{
+    int32_t q_step = 1;
+    int32_t r_step = 1;
+    if (layout && scene && layout->minimap.w > 0.0f && layout->minimap.h > 0.0f) {
+        int32_t q_tiles = scene->scenario.horde_anchor.q + 1;
+        int32_t r_tiles = scene->scenario.horde_anchor.r + 1;
+        int32_t pixel_w = layout->minimap.w > 1.0f ? (int32_t)layout->minimap.w : 1;
+        int32_t pixel_h = layout->minimap.h > 1.0f ? (int32_t)layout->minimap.h : 1;
+        if (q_tiles > pixel_w) {
+            q_step = (q_tiles + pixel_w - 1) / pixel_w;
+        }
+        if (r_tiles > pixel_h) {
+            r_step = (r_tiles + pixel_h - 1) / pixel_h;
+        }
+    }
+    if (q_step < 1) {
+        q_step = 1;
+    }
+    if (r_step < 1) {
+        r_step = 1;
+    }
+    if (out_q_step) {
+        *out_q_step = q_step;
+    }
+    if (out_r_step) {
+        *out_r_step = r_step;
+    }
 }
 
 void game_ui_tile_center(const GameUiLayout *layout, GameHexAxial tile, float *out_x, float *out_y)
@@ -579,6 +615,8 @@ void game_ui_handle_menu_click(GameUiState *ui, const GameUiHit *hit)
     case GAME_UI_HIT_MENU_NEW_GAME:
         ui->screen = GAME_UI_SCREEN_GAME;
         break;
+    case GAME_UI_HIT_MENU_REGENERATE:
+        break;
     case GAME_UI_HIT_MENU_LOAD:
         ui->screen = GAME_UI_SCREEN_LOAD;
         break;
@@ -698,6 +736,8 @@ const char *game_ui_hit_label(GameUiHitKind hit)
         return "UI";
     case GAME_UI_HIT_MENU_NEW_GAME:
         return "New game";
+    case GAME_UI_HIT_MENU_REGENERATE:
+        return "Regenerate world";
     case GAME_UI_HIT_MENU_LOAD:
         return "Load";
     case GAME_UI_HIT_MENU_SETTINGS:

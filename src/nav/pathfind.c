@@ -74,25 +74,156 @@ static bool game_pathfind_is_passable(const GamePathCostMap *map, GameHexAxial t
     return cost >= 0 && cost != (int32_t)map->blocked_cost;
 }
 
-static GamePathFindResult game_pathfind_restart_scratch(const GamePathCostMap *map, const GamePathQueryScratch *scratch) {
-    if (!map || !map->cost || !scratch || !scratch->g_score || !scratch->f_score || !scratch->parent || !scratch->open || !scratch->closed) {
+static GamePathFindResult game_pathfind_restart_scratch(const GamePathCostMap *map, GamePathQueryScratch *scratch) {
+    if (!map || !map->cost || !scratch || !scratch->g_score || !scratch->f_score || !scratch->parent ||
+        !scratch->open || !scratch->closed || !scratch->touched_flags || !scratch->heap || !scratch->heap_pos ||
+        !scratch->touched) {
         return GAME_PATH_FIND_RESULT_INVALID_ARGUMENT;
     }
 
     size_t capacity = game_pathfind_required_capacity(&map->grid);
-    if (capacity == 0u || capacity != scratch->capacity) {
+    if (capacity == 0u || capacity > scratch->capacity || scratch->heap_capacity < scratch->capacity ||
+        scratch->heap_pos_capacity < scratch->capacity || scratch->touched_capacity < scratch->capacity) {
         return GAME_PATH_FIND_RESULT_INVALID_ARGUMENT;
     }
 
-    for (size_t i = 0; i < capacity; ++i) {
-        scratch->g_score[i] = UINT32_MAX;
-        scratch->f_score[i] = UINT32_MAX;
-        scratch->parent[i] = -1;
-        scratch->open[i] = false;
-        scratch->closed[i] = false;
+    for (size_t i = 0; i < scratch->touched_count; ++i) {
+        size_t index = scratch->touched[i];
+        if (index >= scratch->capacity) {
+            return GAME_PATH_FIND_RESULT_INVALID_ARGUMENT;
+        }
+        scratch->g_score[index] = UINT32_MAX;
+        scratch->f_score[index] = UINT32_MAX;
+        scratch->parent[index] = -1;
+        scratch->open[index] = false;
+        scratch->closed[index] = false;
+        scratch->touched_flags[index] = false;
+        scratch->heap_pos[index] = 0u;
     }
+    scratch->touched_count = 0u;
 
     return GAME_PATH_FIND_RESULT_OK;
+}
+
+static GamePathFindResult game_pathfind_touch(GamePathQueryScratch *scratch, size_t index) {
+    if (!scratch || index >= scratch->capacity) {
+        return GAME_PATH_FIND_RESULT_INVALID_ARGUMENT;
+    }
+    if (scratch->touched_flags[index]) {
+        return GAME_PATH_FIND_RESULT_OK;
+    }
+    if (scratch->touched_count >= scratch->touched_capacity) {
+        return GAME_PATH_FIND_RESULT_INVALID_ARGUMENT;
+    }
+
+    scratch->touched[scratch->touched_count++] = index;
+    scratch->touched_flags[index] = true;
+    scratch->g_score[index] = UINT32_MAX;
+    scratch->f_score[index] = UINT32_MAX;
+    scratch->parent[index] = -1;
+    scratch->open[index] = false;
+    scratch->closed[index] = false;
+    scratch->heap_pos[index] = 0u;
+    return GAME_PATH_FIND_RESULT_OK;
+}
+
+static GameHexAxial game_pathfind_tile_for_index(const GamePathCostMap *map, size_t index) {
+    return (GameHexAxial){
+        .q = map->grid.q_min + (int32_t)(index / map->grid.r_count),
+        .r = map->grid.r_min + (int32_t)(index % map->grid.r_count),
+    };
+}
+
+static bool game_pathfind_heap_less(const GamePathCostMap *map, const GamePathQueryScratch *scratch, size_t lhs, size_t rhs) {
+    if (scratch->f_score[lhs] != scratch->f_score[rhs]) {
+        return scratch->f_score[lhs] < scratch->f_score[rhs];
+    }
+    if (scratch->g_score[lhs] != scratch->g_score[rhs]) {
+        return scratch->g_score[lhs] > scratch->g_score[rhs];
+    }
+
+    GameHexAxial left = game_pathfind_tile_for_index(map, lhs);
+    GameHexAxial right = game_pathfind_tile_for_index(map, rhs);
+    return left.q > right.q || (left.q == right.q && left.r < right.r);
+}
+
+static void game_pathfind_heap_swap(GamePathQueryScratch *scratch, size_t *heap_count, size_t left, size_t right) {
+    (void)heap_count;
+    size_t tmp = scratch->heap[left];
+    scratch->heap[left] = scratch->heap[right];
+    scratch->heap[right] = tmp;
+    scratch->heap_pos[scratch->heap[left]] = left + 1u;
+    scratch->heap_pos[scratch->heap[right]] = right + 1u;
+}
+
+static void game_pathfind_heap_sift_up(const GamePathCostMap *map, GamePathQueryScratch *scratch, size_t *heap_count,
+                                       size_t index) {
+    while (index > 0u) {
+        size_t parent = (index - 1u) / 2u;
+        if (!game_pathfind_heap_less(map, scratch, scratch->heap[index], scratch->heap[parent])) {
+            break;
+        }
+        game_pathfind_heap_swap(scratch, heap_count, index, parent);
+        index = parent;
+    }
+}
+
+static void game_pathfind_heap_sift_down(const GamePathCostMap *map, GamePathQueryScratch *scratch, size_t *heap_count,
+                                         size_t index) {
+    while (1) {
+        size_t left = index * 2u + 1u;
+        size_t right = left + 1u;
+        size_t best = index;
+        if (left < *heap_count && game_pathfind_heap_less(map, scratch, scratch->heap[left], scratch->heap[best])) {
+            best = left;
+        }
+        if (right < *heap_count && game_pathfind_heap_less(map, scratch, scratch->heap[right], scratch->heap[best])) {
+            best = right;
+        }
+        if (best == index) {
+            break;
+        }
+        game_pathfind_heap_swap(scratch, heap_count, index, best);
+        index = best;
+    }
+}
+
+static GamePathFindResult game_pathfind_heap_push_or_fix(const GamePathCostMap *map, GamePathQueryScratch *scratch,
+                                                         size_t *heap_count, size_t index) {
+    if (!map || !scratch || !heap_count || index >= scratch->capacity) {
+        return GAME_PATH_FIND_RESULT_INVALID_ARGUMENT;
+    }
+    if (scratch->heap_pos[index] == 0u) {
+        if (*heap_count >= scratch->heap_capacity) {
+            return GAME_PATH_FIND_RESULT_INVALID_ARGUMENT;
+        }
+        size_t pos = (*heap_count)++;
+        scratch->heap[pos] = index;
+        scratch->heap_pos[index] = pos + 1u;
+        game_pathfind_heap_sift_up(map, scratch, heap_count, pos);
+        return GAME_PATH_FIND_RESULT_OK;
+    }
+
+    size_t pos = scratch->heap_pos[index] - 1u;
+    game_pathfind_heap_sift_up(map, scratch, heap_count, pos);
+    return GAME_PATH_FIND_RESULT_OK;
+}
+
+static bool game_pathfind_heap_pop(const GamePathCostMap *map, GamePathQueryScratch *scratch, size_t *heap_count,
+                                   size_t *out_index) {
+    if (!map || !scratch || !heap_count || !out_index || *heap_count == 0u) {
+        return false;
+    }
+
+    *out_index = scratch->heap[0];
+    scratch->heap_pos[*out_index] = 0u;
+    --(*heap_count);
+    if (*heap_count > 0u) {
+        scratch->heap[0] = scratch->heap[*heap_count];
+        scratch->heap_pos[scratch->heap[0]] = 1u;
+        game_pathfind_heap_sift_down(map, scratch, heap_count, 0u);
+    }
+    return true;
 }
 
 static size_t game_pathfind_capacity_or_zero(const GamePathCostMap *map) {
@@ -103,7 +234,7 @@ GamePathFindResult game_pathfind_query(
     GameHexAxial start,
     GameHexAxial goal,
     const GamePathCostMap *cost_map,
-    const GamePathQueryScratch *scratch,
+    GamePathQueryScratch *scratch,
     uint32_t node_budget,
     GameHexAxial *out_path,
     size_t out_path_capacity,
@@ -134,7 +265,7 @@ GamePathFindResult game_pathfind_query(
         return GAME_PATH_FIND_RESULT_INVALID_ARGUMENT;
     }
 
-    if (scratch->capacity != capacity) {
+    if (scratch->capacity < capacity) {
         return GAME_PATH_FIND_RESULT_INVALID_ARGUMENT;
     }
 
@@ -163,58 +294,29 @@ GamePathFindResult game_pathfind_query(
     size_t start_index = game_pathfind_index(cost_map, start);
     size_t goal_index = game_pathfind_index(cost_map, goal);
 
+    result = game_pathfind_touch(scratch, start_index);
+    if (result != GAME_PATH_FIND_RESULT_OK) {
+        return result;
+    }
     scratch->g_score[start_index] = 0u;
     scratch->f_score[start_index] = (uint32_t)game_hex_axial_distance(start, goal);
     scratch->open[start_index] = true;
 
     size_t expansions = 0u;
+    size_t heap_count = 0u;
     bool found = false;
+    result = game_pathfind_heap_push_or_fix(cost_map, scratch, &heap_count, start_index);
+    if (result != GAME_PATH_FIND_RESULT_OK) {
+        return result;
+    }
 
-    while (1) {
+    while (heap_count > 0u) {
         size_t best_index = (size_t)-1;
-        uint32_t best_f = UINT32_MAX;
-        uint32_t best_g = UINT32_MAX;
-        GameHexAxial best_tile = {0};
-
-        for (size_t i = 0u; i < capacity; ++i) {
-            if (!scratch->open[i]) {
-                continue;
-            }
-
-            if (scratch->f_score[i] < best_f) {
-                best_f = scratch->f_score[i];
-                best_g = scratch->g_score[i];
-                best_index = i;
-                best_tile = (GameHexAxial){
-                    .q = cost_map->grid.q_min + (int32_t)(i / cost_map->grid.r_count),
-                    .r = cost_map->grid.r_min + (int32_t)(i % cost_map->grid.r_count),
-                };
-            } else if (scratch->f_score[i] == best_f && scratch->g_score[i] < best_g) {
-                best_f = scratch->f_score[i];
-                best_g = scratch->g_score[i];
-                best_index = i;
-                best_tile = (GameHexAxial){
-                    .q = cost_map->grid.q_min + (int32_t)(i / cost_map->grid.r_count),
-                    .r = cost_map->grid.r_min + (int32_t)(i % cost_map->grid.r_count),
-                };
-            } else if (scratch->f_score[i] == best_f && scratch->g_score[i] == best_g) {
-                GameHexAxial tile = {
-                    .q = cost_map->grid.q_min + (int32_t)(i / cost_map->grid.r_count),
-                    .r = cost_map->grid.r_min + (int32_t)(i % cost_map->grid.r_count),
-                };
-
-                if (best_index == (size_t)-1) {
-                    best_index = i;
-                    best_tile = tile;
-                } else if (tile.q > best_tile.q || (tile.q == best_tile.q && tile.r < best_tile.r)) {
-                    best_index = i;
-                    best_tile = tile;
-                }
-            }
-        }
-
-        if (best_index == (size_t)-1) {
+        if (!game_pathfind_heap_pop(cost_map, scratch, &heap_count, &best_index)) {
             break;
+        }
+        if (!scratch->open[best_index] || scratch->closed[best_index]) {
+            continue;
         }
 
         scratch->open[best_index] = false;
@@ -231,10 +333,7 @@ GamePathFindResult game_pathfind_query(
             return GAME_PATH_FIND_RESULT_BUDGET_EXHAUSTED;
         }
 
-        GameHexAxial best = {
-            .q = cost_map->grid.q_min + (int32_t)(best_index / cost_map->grid.r_count),
-            .r = cost_map->grid.r_min + (int32_t)(best_index % cost_map->grid.r_count),
-        };
+        GameHexAxial best = game_pathfind_tile_for_index(cost_map, best_index);
 
         GameHexAxial neighbors[6];
         game_hex_axial_neighbors(best, neighbors);
@@ -249,6 +348,10 @@ GamePathFindResult game_pathfind_query(
             }
 
             size_t next_index = game_pathfind_index(cost_map, next);
+            result = game_pathfind_touch(scratch, next_index);
+            if (result != GAME_PATH_FIND_RESULT_OK) {
+                return result;
+            }
             if (scratch->closed[next_index]) {
                 continue;
             }
@@ -269,6 +372,10 @@ GamePathFindResult game_pathfind_query(
                 scratch->g_score[next_index] = tentative_g;
                 scratch->f_score[next_index] = tentative_g + (uint32_t)game_hex_axial_distance(next, goal);
                 scratch->open[next_index] = true;
+                result = game_pathfind_heap_push_or_fix(cost_map, scratch, &heap_count, next_index);
+                if (result != GAME_PATH_FIND_RESULT_OK) {
+                    return result;
+                }
             }
         }
     }
@@ -283,10 +390,7 @@ GamePathFindResult game_pathfind_query(
         if (path_length >= out_path_capacity) {
             return GAME_PATH_FIND_RESULT_PATH_TOO_SMALL;
         }
-        out_path[path_length++] = (GameHexAxial){
-            .q = cost_map->grid.q_min + (int32_t)(cursor / (int32_t)cost_map->grid.r_count),
-            .r = cost_map->grid.r_min + (int32_t)(cursor % cost_map->grid.r_count),
-        };
+        out_path[path_length++] = game_pathfind_tile_for_index(cost_map, (size_t)cursor);
         cursor = scratch->parent[cursor];
     }
 

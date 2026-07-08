@@ -37,7 +37,7 @@ typedef struct GamePathServiceRequestSlot {
     GameHexAxial start;
     GameHexAxial goal;
     const GamePathCostMap *cost_map;
-    const GamePathQueryScratch *scratch;
+    GamePathQueryScratch *scratch;
     GameHexAxial *result_path;
     size_t result_path_capacity;
     size_t result_path_length;
@@ -84,7 +84,7 @@ GamePathServiceResult game_path_service_submit(
     GameHexAxial start,
     GameHexAxial goal,
     const GamePathCostMap *cost_map,
-    const GamePathQueryScratch *scratch,
+    GamePathQueryScratch *scratch,
     uint32_t request_budget,
     GameHexAxial *result_path_buffer,
     size_t result_path_capacity,

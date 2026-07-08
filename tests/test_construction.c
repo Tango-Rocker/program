@@ -97,6 +97,10 @@ static int test_construction_completion_flow(void) {
     int32_t scratch_parent[2u] = {-1, -1};
     bool scratch_open[2u] = {0};
     bool scratch_closed[2u] = {0};
+    bool scratch_touched_flags[2u] = {0};
+    size_t scratch_heap[2u] = {0};
+    size_t scratch_heap_pos[2u] = {0};
+    size_t scratch_touched[2u] = {0};
     GamePathQueryScratch scratch = {
         .capacity = 2u,
         .g_score = scratch_g,
@@ -104,6 +108,13 @@ static int test_construction_completion_flow(void) {
         .parent = scratch_parent,
         .open = scratch_open,
         .closed = scratch_closed,
+        .touched_flags = scratch_touched_flags,
+        .heap = scratch_heap,
+        .heap_pos = scratch_heap_pos,
+        .touched = scratch_touched,
+        .heap_capacity = 2u,
+        .heap_pos_capacity = 2u,
+        .touched_capacity = 2u,
     };
 
     GamePathService path_service = {0};
@@ -465,6 +476,10 @@ static int test_construction_abort_releases_workflow(void) {
     int32_t parent[2u] = {-1, -1};
     bool open[2u] = {0};
     bool closed[2u] = {0};
+    bool touched_flags[2u] = {0};
+    size_t heap[2u] = {0};
+    size_t heap_pos[2u] = {0};
+    size_t touched[2u] = {0};
     GamePathQueryScratch path_scratch = {
         .capacity = 2u,
         .g_score = g,
@@ -472,6 +487,13 @@ static int test_construction_abort_releases_workflow(void) {
         .parent = parent,
         .open = open,
         .closed = closed,
+        .touched_flags = touched_flags,
+        .heap = heap,
+        .heap_pos = heap_pos,
+        .touched = touched,
+        .heap_capacity = 2u,
+        .heap_pos_capacity = 2u,
+        .touched_capacity = 2u,
     };
     GamePathService path_service = {0};
     GamePathServiceRequestSlot path_slots[1u] = {0};

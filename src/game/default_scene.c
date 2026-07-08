@@ -24,9 +24,10 @@
 #include "ui/command_inspector.h"
 #include "world/structure.h"
 
-#define GAME_DEFAULT_SCENE_WIDTH 180
-#define GAME_DEFAULT_SCENE_HEIGHT 120
+#define GAME_DEFAULT_SCENE_WIDTH 1140
+#define GAME_DEFAULT_SCENE_HEIGHT 760
 #define GAME_DEFAULT_SCENE_FIELD_PADDING 3
+#define GAME_DEFAULT_SCENE_PATH_CORRIDOR_PADDING 24
 
 static void game_default_scene_zero_runtime(GameDefaultScene *scene)
 {
@@ -82,18 +83,28 @@ static void game_default_scene_destroy_pathing(GameDefaultScene *scene)
         return;
     }
     free(scene->path_cost_values);
+    free(scene->path_query_cost_values);
     free(scene->path_g_score);
     free(scene->path_f_score);
     free(scene->path_parent);
     free(scene->path_open);
     free(scene->path_closed);
+    free(scene->path_touched_flags);
+    free(scene->path_heap);
+    free(scene->path_heap_pos);
+    free(scene->path_touched);
     free(scene->path_result_buffer);
     scene->path_cost_values = NULL;
+    scene->path_query_cost_values = NULL;
     scene->path_g_score = NULL;
     scene->path_f_score = NULL;
     scene->path_parent = NULL;
     scene->path_open = NULL;
     scene->path_closed = NULL;
+    scene->path_touched_flags = NULL;
+    scene->path_heap = NULL;
+    scene->path_heap_pos = NULL;
+    scene->path_touched = NULL;
     scene->path_result_buffer = NULL;
     scene->path_result_capacity = 0u;
     scene->path_preview_length = 0u;
@@ -106,6 +117,7 @@ static void game_default_scene_destroy_pathing(GameDefaultScene *scene)
 static void game_default_scene_cleanup_partial(GameDefaultScene *scene)
 {
     game_default_scene_destroy_pathing(scene);
+    game_world_topology_destroy(&scene->topology);
     game_field_registry_destroy(&scene->sensory_fields);
     game_tile_field_destroy(&scene->noise_field);
     game_event_log_destroy(&scene->event_log);
@@ -133,15 +145,21 @@ static GameDefaultSceneResult game_default_scene_init_pathing(GameDefaultScene *
     }
 
     scene->path_cost_values = (uint16_t *)malloc(sizeof(uint16_t) * capacity);
+    scene->path_query_cost_values = (uint16_t *)malloc(sizeof(uint16_t) * capacity);
     scene->path_g_score = (uint32_t *)malloc(sizeof(uint32_t) * capacity);
     scene->path_f_score = (uint32_t *)malloc(sizeof(uint32_t) * capacity);
     scene->path_parent = (int32_t *)malloc(sizeof(int32_t) * capacity);
     scene->path_open = (bool *)malloc(sizeof(bool) * capacity);
     scene->path_closed = (bool *)malloc(sizeof(bool) * capacity);
+    scene->path_touched_flags = (bool *)calloc(capacity, sizeof(bool));
+    scene->path_heap = (size_t *)malloc(sizeof(size_t) * capacity);
+    scene->path_heap_pos = (size_t *)calloc(capacity, sizeof(size_t));
+    scene->path_touched = (size_t *)malloc(sizeof(size_t) * capacity);
     scene->path_result_capacity = GAME_DEFAULT_SCENE_MAX_PATH_TILES;
     scene->path_result_buffer = (GameHexAxial *)malloc(sizeof(GameHexAxial) * scene->path_result_capacity);
-    if (!scene->path_cost_values || !scene->path_g_score || !scene->path_f_score || !scene->path_parent ||
-        !scene->path_open || !scene->path_closed || !scene->path_result_buffer) {
+    if (!scene->path_cost_values || !scene->path_query_cost_values || !scene->path_g_score || !scene->path_f_score ||
+        !scene->path_parent || !scene->path_open || !scene->path_closed || !scene->path_touched_flags ||
+        !scene->path_heap || !scene->path_heap_pos || !scene->path_touched || !scene->path_result_buffer) {
         return GAME_DEFAULT_SCENE_RESULT_INIT_FAILED;
     }
 
@@ -157,6 +175,14 @@ static GameDefaultSceneResult game_default_scene_init_pathing(GameDefaultScene *
         .parent = scene->path_parent,
         .open = scene->path_open,
         .closed = scene->path_closed,
+        .touched_flags = scene->path_touched_flags,
+        .heap = scene->path_heap,
+        .heap_pos = scene->path_heap_pos,
+        .touched = scene->path_touched,
+        .heap_capacity = capacity,
+        .heap_pos_capacity = capacity,
+        .touched_capacity = capacity,
+        .touched_count = 0u,
     };
 
     for (int32_t q = 0; q <= scene->scenario.horde_anchor.q; ++q) {
@@ -183,6 +209,11 @@ static GameDefaultSceneResult game_default_scene_init_pathing(GameDefaultScene *
     scene->has_path_preview = false;
     scene->party_following_path = false;
     return GAME_DEFAULT_SCENE_RESULT_OK;
+}
+
+static bool game_default_scene_topology_passable(int32_t tile_value)
+{
+    return tile_value >= 0;
 }
 
 static GameDefaultSceneResult game_default_scene_init_sensory_fields(GameDefaultScene *scene)
@@ -229,6 +260,12 @@ GameDefaultSceneResult game_default_scene_init(GameDefaultScene *scene)
         .include_stockpile = true,
     };
     if (game_scenario_generate(&scene->scenario, &scenario_config) != GAME_SCENARIO_GEN_RESULT_OK) {
+        game_default_scene_cleanup_partial(scene);
+        return GAME_DEFAULT_SCENE_RESULT_INIT_FAILED;
+    }
+    game_world_topology_init(&scene->topology);
+    if (game_world_topology_rebuild(&scene->topology, &scene->scenario.map, game_default_scene_topology_passable,
+                                    NULL) != GAME_WORLD_TOPOLOGY_RESULT_OK) {
         game_default_scene_cleanup_partial(scene);
         return GAME_DEFAULT_SCENE_RESULT_INIT_FAILED;
     }
@@ -313,6 +350,27 @@ static bool game_default_scene_tile_is_open(const GameDefaultScene *scene, GameH
 
     int32_t terrain = -1;
     return game_world_map_get(&scene->scenario.map, tile, &terrain) == GAME_WORLD_MAP_RESULT_OK && terrain >= 0;
+}
+
+static int32_t game_default_scene_min_i32(int32_t a, int32_t b)
+{
+    return a < b ? a : b;
+}
+
+static int32_t game_default_scene_max_i32(int32_t a, int32_t b)
+{
+    return a > b ? a : b;
+}
+
+static int32_t game_default_scene_clamp_i32(int32_t value, int32_t min_value, int32_t max_value)
+{
+    if (value < min_value) {
+        return min_value;
+    }
+    if (value > max_value) {
+        return max_value;
+    }
+    return value;
 }
 
 static GameDefaultSceneResult game_default_scene_stage_tile_command(GameDefaultScene *scene, GameCommandType type,
@@ -511,11 +569,56 @@ static GameDefaultSceneResult game_default_scene_compute_path(GameDefaultScene *
     if (!game_default_scene_tile_is_open(scene, start) || !game_default_scene_tile_is_open(scene, target)) {
         return GAME_DEFAULT_SCENE_RESULT_STEP_FAILED;
     }
+    if (!game_world_topology_same_region(&scene->topology, start, target)) {
+        return GAME_DEFAULT_SCENE_RESULT_STEP_FAILED;
+    }
+
+    int32_t max_map_q = scene->scenario.horde_anchor.q;
+    int32_t max_map_r = scene->scenario.horde_anchor.r;
+    int32_t min_q = game_default_scene_clamp_i32(
+        game_default_scene_min_i32(start.q, target.q) - GAME_DEFAULT_SCENE_PATH_CORRIDOR_PADDING, 0, max_map_q);
+    int32_t max_q = game_default_scene_clamp_i32(
+        game_default_scene_max_i32(start.q, target.q) + GAME_DEFAULT_SCENE_PATH_CORRIDOR_PADDING, 0, max_map_q);
+    int32_t min_r = game_default_scene_clamp_i32(
+        game_default_scene_min_i32(start.r, target.r) - GAME_DEFAULT_SCENE_PATH_CORRIDOR_PADDING, 0, max_map_r);
+    int32_t max_r = game_default_scene_clamp_i32(
+        game_default_scene_max_i32(start.r, target.r) + GAME_DEFAULT_SCENE_PATH_CORRIDOR_PADDING, 0, max_map_r);
+    GamePathGrid query_grid = {
+        .q_min = min_q,
+        .r_min = min_r,
+        .q_count = (size_t)(max_q - min_q + 1),
+        .r_count = (size_t)(max_r - min_r + 1),
+    };
+    size_t query_capacity = game_pathfind_required_capacity(&query_grid);
+    if (query_capacity == 0u || query_capacity > scene->path_scratch.capacity) {
+        return GAME_DEFAULT_SCENE_RESULT_STEP_FAILED;
+    }
+    GamePathCostMap query_cost_map = {
+        .grid = query_grid,
+        .cost = scene->path_query_cost_values,
+        .blocked_cost = UINT16_MAX,
+    };
+    for (int32_t q = min_q; q <= max_q; ++q) {
+        for (int32_t r = min_r; r <= max_r; ++r) {
+            GameHexAxial tile = {q, r};
+            int32_t terrain = -1;
+            size_t index = game_pathfind_index(&query_cost_map, tile);
+            if (index == (size_t)-1 || index >= query_capacity) {
+                return GAME_DEFAULT_SCENE_RESULT_STEP_FAILED;
+            }
+            if (game_world_map_get(&scene->scenario.map, tile, &terrain) != GAME_WORLD_MAP_RESULT_OK || terrain < 0) {
+                scene->path_query_cost_values[index] = UINT16_MAX;
+            } else {
+                scene->path_query_cost_values[index] = 1u;
+            }
+        }
+    }
 
     (void)game_path_service_advance_tick(&scene->path_service, scene->tick + 4u, UINT32_MAX);
     GamePathRequestHandle handle = {0};
-    if (game_path_service_submit(&scene->path_service, scene->tick, start, target, &scene->path_cost_map,
-                                 &scene->path_scratch, 1u, scene->path_result_buffer, scene->path_result_capacity,
+    if (game_path_service_submit(&scene->path_service, scene->tick, start, target, &query_cost_map,
+                                 &scene->path_scratch, UINT32_MAX, scene->path_result_buffer,
+                                 scene->path_result_capacity,
                                  &handle) != GAME_PATH_SERVICE_RESULT_OK) {
         return GAME_DEFAULT_SCENE_RESULT_STEP_FAILED;
     }
@@ -809,7 +912,7 @@ GameDefaultSceneResult game_default_scene_attack_at(GameDefaultScene *scene, Gam
     GameCombatCooldownTable cooldowns = {0};
     GameCombatResultData combat = {0};
     if (game_combat_init_catalog(&catalog, abilities, 1u) != GAME_COMBAT_RESULT_OK ||
-        game_combat_catalog_set(&catalog, 10u, 320u, 4u, 6) != GAME_COMBAT_RESULT_OK ||
+        game_combat_catalog_set(&catalog, 10u, 4096u, 4u, 6) != GAME_COMBAT_RESULT_OK ||
         game_combat_cooldown_init(&cooldowns, cooldown_slots, 1u) != GAME_COMBAT_RESULT_OK) {
         return GAME_DEFAULT_SCENE_RESULT_STEP_FAILED;
     }
@@ -1095,7 +1198,7 @@ static GameDefaultSceneResult game_default_scene_run_demo_combat(GameDefaultScen
     GameCombatCooldownSlot cooldown_slots[2] = {0};
     GameCombatCooldownTable cooldowns = {0};
     if (game_combat_init_catalog(&catalog, abilities, 2u) != GAME_COMBAT_RESULT_OK ||
-        game_combat_catalog_set(&catalog, 10u, 320u, 4u, 6) != GAME_COMBAT_RESULT_OK ||
+        game_combat_catalog_set(&catalog, 10u, 4096u, 4u, 6) != GAME_COMBAT_RESULT_OK ||
         game_combat_cooldown_init(&cooldowns, cooldown_slots, 2u) != GAME_COMBAT_RESULT_OK) {
         return GAME_DEFAULT_SCENE_RESULT_STEP_FAILED;
     }
@@ -1126,8 +1229,8 @@ static GameDefaultSceneResult game_default_scene_run_demo_combat(GameDefaultScen
         .target_q = scene->scenario.horde_anchor.q,
         .target_r = scene->scenario.horde_anchor.r,
         .damage = combat.damage,
-        .speed_per_tick = 320u,
-        .remaining_lifetime_ticks = 4,
+        .speed_per_tick = 2048u,
+        .remaining_lifetime_ticks = 2,
         .payload_id = 1u,
         .ability_id = command.ability_id,
         .parent_event_sequence = combat.ability_event_sequence,

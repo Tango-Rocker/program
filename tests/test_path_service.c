@@ -34,6 +34,10 @@ int test_path_service(void) {
     int32_t parent1[5] = {0};
     bool open1[5] = {0};
     bool closed1[5] = {0};
+    bool touched_flags1[5] = {0};
+    size_t heap1[5] = {0};
+    size_t heap_pos1[5] = {0};
+    size_t touched1[5] = {0};
     GamePathQueryScratch scratch1 = {
         .capacity = 5u,
         .g_score = g1,
@@ -41,6 +45,13 @@ int test_path_service(void) {
         .parent = parent1,
         .open = open1,
         .closed = closed1,
+        .touched_flags = touched_flags1,
+        .heap = heap1,
+        .heap_pos = heap_pos1,
+        .touched = touched1,
+        .heap_capacity = 5u,
+        .heap_pos_capacity = 5u,
+        .touched_capacity = 5u,
     };
 
     GameHexAxial result_storage[16];
@@ -175,6 +186,10 @@ int test_path_service(void) {
     int32_t parent2[5] = {0};
     bool open2[5] = {0};
     bool closed2[5] = {0};
+    bool touched_flags2[5] = {0};
+    size_t heap2[5] = {0};
+    size_t heap_pos2[5] = {0};
+    size_t touched2[5] = {0};
     GamePathQueryScratch scratch2 = {
         .capacity = 5u,
         .g_score = g2,
@@ -182,6 +197,13 @@ int test_path_service(void) {
         .parent = parent2,
         .open = open2,
         .closed = closed2,
+        .touched_flags = touched_flags2,
+        .heap = heap2,
+        .heap_pos = heap_pos2,
+        .touched = touched2,
+        .heap_capacity = 5u,
+        .heap_pos_capacity = 5u,
+        .touched_capacity = 5u,
     };
 
     uint32_t g3[5] = {0};
@@ -189,6 +211,10 @@ int test_path_service(void) {
     int32_t parent3[5] = {0};
     bool open3[5] = {0};
     bool closed3[5] = {0};
+    bool touched_flags3[5] = {0};
+    size_t heap3[5] = {0};
+    size_t heap_pos3[5] = {0};
+    size_t touched3[5] = {0};
     GamePathQueryScratch scratch3 = {
         .capacity = 5u,
         .g_score = g3,
@@ -196,6 +222,13 @@ int test_path_service(void) {
         .parent = parent3,
         .open = open3,
         .closed = closed3,
+        .touched_flags = touched_flags3,
+        .heap = heap3,
+        .heap_pos = heap_pos3,
+        .touched = touched3,
+        .heap_capacity = 5u,
+        .heap_pos_capacity = 5u,
+        .touched_capacity = 5u,
     };
 
     GameHexAxial budget_buffer_a[16];
@@ -210,7 +243,7 @@ int test_path_service(void) {
             (GameHexAxial){0, 4},
             &line,
             &scratch2,
-            1u,
+            10u,
             budget_buffer_a,
             16u,
             &request4
@@ -225,7 +258,7 @@ int test_path_service(void) {
             (GameHexAxial){0, 4},
             &line,
             &scratch3,
-            1u,
+            10u,
             budget_buffer_b,
             16u,
             &request5
@@ -233,8 +266,8 @@ int test_path_service(void) {
         "submit budgeted request B"
     );
     failed += assert_true(
-        game_path_service_advance_tick(&service, 10u, 1u) == GAME_PATH_SERVICE_RESULT_OK,
-        "tick budget can resolve one request"
+        game_path_service_advance_tick(&service, 10u, 5u) == GAME_PATH_SERVICE_RESULT_OK,
+        "node budget can resolve one request"
     );
     failed += assert_true(
         game_path_service_status(&service, request4, &status) == GAME_PATH_SERVICE_RESULT_OK
@@ -248,8 +281,8 @@ int test_path_service(void) {
     );
 
     failed += assert_true(
-        game_path_service_advance_tick(&service, 11u, 1u) == GAME_PATH_SERVICE_RESULT_OK,
-        "next tick budget resolves second request"
+        game_path_service_advance_tick(&service, 11u, 5u) == GAME_PATH_SERVICE_RESULT_OK,
+        "next node budget resolves second request"
     );
     failed += assert_true(
         game_path_service_status(&service, request5, &status) == GAME_PATH_SERVICE_RESULT_OK
@@ -264,6 +297,10 @@ int test_path_service(void) {
     int32_t parent4[5] = {0};
     bool open4[5] = {0};
     bool closed4[5] = {0};
+    bool touched_flags4[5] = {0};
+    size_t heap4[5] = {0};
+    size_t heap_pos4[5] = {0};
+    size_t touched4[5] = {0};
     GamePathQueryScratch reuse_scratch = {
         .capacity = 5u,
         .g_score = g4,
@@ -271,6 +308,13 @@ int test_path_service(void) {
         .parent = parent4,
         .open = open4,
         .closed = closed4,
+        .touched_flags = touched_flags4,
+        .heap = heap4,
+        .heap_pos = heap_pos4,
+        .touched = touched4,
+        .heap_capacity = 5u,
+        .heap_pos_capacity = 5u,
+        .touched_capacity = 5u,
     };
 
     failed += assert_true(

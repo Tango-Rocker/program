@@ -51,9 +51,19 @@ static GameWorldMapChunk *world_map_find_chunk(const GameWorldMap *map, GameHexC
     if (!map || map->chunk_count == 0) {
         return NULL;
     }
-    for (size_t i = 0; i < map->chunk_count; ++i) {
-        if (world_map_cmp_chunk_key(map->chunks[i].key, key) == 0) {
-            return &map->chunks[i];
+
+    size_t lo = 0u;
+    size_t hi = map->chunk_count;
+    while (lo < hi) {
+        size_t mid = lo + (hi - lo) / 2u;
+        int cmp = world_map_cmp_chunk_key(map->chunks[mid].key, key);
+        if (cmp == 0) {
+            return &map->chunks[mid];
+        }
+        if (cmp < 0) {
+            lo = mid + 1u;
+        } else {
+            hi = mid;
         }
     }
     return NULL;
@@ -64,19 +74,22 @@ static GameWorldMapResult world_map_find_chunk_insert_position(const GameWorldMa
         return GAME_WORLD_MAP_RESULT_INVALID_ARGUMENT;
     }
 
-    size_t insert_index = map->chunk_count;
-    for (size_t i = 0; i < map->chunk_count; ++i) {
-        int cmp = world_map_cmp_chunk_key(map->chunks[i].key, key);
+    size_t lo = 0u;
+    size_t hi = map->chunk_count;
+    while (lo < hi) {
+        size_t mid = lo + (hi - lo) / 2u;
+        int cmp = world_map_cmp_chunk_key(map->chunks[mid].key, key);
         if (cmp == 0) {
             return GAME_WORLD_MAP_RESULT_CHUNK_EXISTS;
         }
-        if (cmp > 0) {
-            insert_index = i;
-            break;
+        if (cmp < 0) {
+            lo = mid + 1u;
+        } else {
+            hi = mid;
         }
     }
 
-    *out_insert_index = insert_index;
+    *out_insert_index = lo;
     return GAME_WORLD_MAP_RESULT_OK;
 }
 

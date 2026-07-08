@@ -30,6 +30,14 @@ typedef struct GamePathQueryScratch {
     int32_t *parent;
     bool *open;
     bool *closed;
+    bool *touched_flags;
+    size_t *heap;
+    size_t *heap_pos;
+    size_t *touched;
+    size_t heap_capacity;
+    size_t heap_pos_capacity;
+    size_t touched_capacity;
+    size_t touched_count;
 } GamePathQueryScratch;
 
 typedef enum {
@@ -50,7 +58,7 @@ GamePathFindResult game_pathfind_query(
     GameHexAxial start,
     GameHexAxial goal,
     const GamePathCostMap *cost_map,
-    const GamePathQueryScratch *scratch,
+    GamePathQueryScratch *scratch,
     uint32_t node_budget,
     GameHexAxial *out_path,
     size_t out_path_capacity,

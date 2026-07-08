@@ -51,8 +51,9 @@ The navmesh remains unimplemented initially. The hex-grid model is the canonical
 
 - Added deterministic bounded A* query in `src/nav/pathfind.c`.
 - Query inputs are bounded maps with explicit cost data (`UINT16_MAX` as blocked), explicit node budget, and caller-owned scratch buffers.
+- Query scratch now includes caller-owned heap, heap-position, and touched-index buffers so searches avoid full-grid open-list scans and reset only visited nodes.
 - Neighbor expansion order follows the deterministic axial neighbor ordering from `world/hex`.
-- Tie-break is deterministic and stable when `f` and `g` scores collide.
+- Tie-break is deterministic, preferring lower `f`, then deeper progress on equal `f`, then stable axial ordering.
 - Navigation services treat structures as terrain modifiers via world map flags from `src/world/structure.c`.
   - Footprints write deterministic blocking bits for passability checks.
   - Structure updates set map-level topology-dirty markers for rebuild hooks.
@@ -78,7 +79,7 @@ The navmesh remains unimplemented initially. The hex-grid model is the canonical
 ## Budget and cancellation
 
 - Budget guidance:
-  - per-frame path node budget is clamped to a deterministic maximum.
+  - per-frame path node budget is clamped to a deterministic maximum and consumed by expanded nodes.
   - highest priority requests are path-critical actors (combat, flee, immediate player-visible movement).
   - low-priority background requests can be deferred and coalesced by origin/destination.
 - Cancellation:
@@ -90,3 +91,9 @@ The navmesh remains unimplemented initially. The hex-grid model is the canonical
 
 - Navigation API must not depend on render state or camera coordinates.
 - AI behavior reads resolved paths only; it does not mutate path internals.
+
+## Large-map default scene pathing
+
+- The default scene now uses a 1140x760 map.
+- Scene path requests first reject disconnected endpoints through the topology index.
+- Exact A* runs over a bounded corridor around the requested route while reusing the scene's full scratch arena.
